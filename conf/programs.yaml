@@ -1,0 +1,12 @@
+-   name: "hw"
+    exec: echo "Hello world %name% {num}"
+    single: name
+    loop: num
+    help: "Just prints hello world"
+
+-   name: "test"
+    exec: echo "testing success"
+    single: NA
+    loop: NA
+    help: "test prog"
+
