@@ -1,12 +1,16 @@
 -   name: "hw"
     exec: echo "Hello world %name% {num}"
-    single: name
-    loop: num
     help: "Just prints hello world"
+    vars:
+        name: "Your name"
+        num: "File of numbers"
 
 -   name: "test"
     exec: echo "testing success"
-    single: NA
-    loop: NA
     help: "test prog"
+    vars:
 
+-   name: "single_var"
+    exec: echo "This is a single variable %s%"
+    vars:
+        s: "Any var"

@@ -4,13 +4,36 @@ import yaml # Read yaml files
 import os # OS related operations
 import functools # Use reduce function. May not be useful
 import re # regex
+import datetime
+import subprocess
+import argparse
+
+parser = argparse.ArgumentParser("Brick commands")
+parser.add_argument("-p","--program", help="temp")
+
+subparsers = parser.add_subparsers(help = "Progs")
+print("Get help")
+sp_c1 = subparsers.add_parser("hw", help = "Help for hello world")
+sp_c1.add_argument("--name", help="name of person")
+
+
+sp_c2 = subparsers.add_parser("test", help = "testing")
+sp_c2.add_argument("--test", help="any input")
+
+args = parser.parse_args()
+
+
 
 # Main inputs
 CONFIG_FILE="conf/programs.yaml"
 COMMANDS_DIR="_commands"
 
 #cli inputs
-COMMAND_NAME="hw"
+#COMMAND_NAME="hw"
+COMMAND_NAME = args.program
+print(COMMAND_NAME)
+
+
 
 # Command class
 
@@ -24,7 +47,7 @@ class Command:
         self.exec=each_command["exec"]
 
     
-    def gettime(): # Get time in a file creation friendly way
+    def gettime(none): # Get time in a file creation friendly way
         t = datetime.datetime.now().strftime("%Y-%m-%d-%H_%M_%s")
         return(t)
 
@@ -34,7 +57,7 @@ class Command:
         """
         if not os.path.exists(COMMANDS_DIR):
             os.mkdir(COMMANDS_DIR)
-        t = gettime()
+        t = self.gettime()
         exec_file = COMMANDS_DIR + "/" + self.name + "." + t + ".sh"
         with open(exec_file,"w") as f:
             f.write('#!/usr/bin/env bash'+"\n")
@@ -67,9 +90,8 @@ class Command:
         1. single entry input. eg. %name%
         2. multiple entry inpu. eg. {all_fastq_files}
         """
-        singles = single_entry()
+        singles = single_entry(self)
         return(singles)
-
 
 def read_config_yaml(CONFIG_FILE):
     """
@@ -85,6 +107,7 @@ def read_config_yaml(CONFIG_FILE):
             commands.append(Command(each_command)) # An array of objects of class Command
     return(commands)
 
+
 commands = read_config_yaml(CONFIG_FILE)
 
 """
@@ -95,7 +118,7 @@ all_command_names = [ i.name for i in commands ]
 
 if not COMMAND_NAME in all_command_names:
     print("Command not present")
-    print_command_list(commands)
+    #print_command_list(commands)
     #exit(1)
 else:
     command_filtered=[] # relevant command is being filtered
@@ -117,25 +140,13 @@ if len(command_filtered) > 1:
 command_data.create_command_file()
 command_data.shell()
 
+def print_help(command_data, parser):
+    parser.add_argument("--name", help="name of a person")
+    parser.add_argument("--file", help = "file")
+    return(parser)
 
-
-
-#### ---- END ----
-
-
-# Print list of commands present
-def print_command_list(commands):
-    pass
-
-def command_exec(command_data_exec):
-    """
-    Given an object of class Command
-    this will exec this on linux shell
-    Uses subprocess.run
-    """
-    exec_list = [i.strip().split() for i in command_data_exec.split('"')]
-    command_array =  functools.reduce(lambda x,y: x+y, temp)
-    return(command_array)
-
+#p = print_help(command_data, parser)
+#print(p)
+#args = p.parse_args()
 
 
