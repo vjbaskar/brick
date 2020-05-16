@@ -23,17 +23,22 @@ sp_c2.add_argument("--test", help="any input")
 args = parser.parse_args()
 
 
+def helpPlease(commands):
+    parser = argparse.ArgumentParser("Brick commands")
+
+
+
+
 
 # Main inputs
 CONFIG_FILE="conf/programs.yaml"
 COMMANDS_DIR="_commands"
 
 #cli inputs
-#COMMAND_NAME="hw"
+COMMAND_NAME="hw"
+
 COMMAND_NAME = args.program
 print(COMMAND_NAME)
-
-
 
 # Command class
 
@@ -107,7 +112,6 @@ def read_config_yaml(CONFIG_FILE):
             commands.append(Command(each_command)) # An array of objects of class Command
     return(commands)
 
-
 commands = read_config_yaml(CONFIG_FILE)
 
 """
@@ -139,6 +143,8 @@ if len(command_filtered) > 1:
 
 command_data.create_command_file()
 command_data.shell()
+
+
 
 def print_help(command_data, parser):
     parser.add_argument("--name", help="name of a person")
