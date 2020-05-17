@@ -11,6 +11,7 @@
     vars:
 
 -   name: "single_var"
-    exec: echo "This is a single variable %s%"
+    exec: echo "This is a single variable %singlevar%"
+    help: "Uses a single variable"
     vars:
-        s: "Any var"
+        singlevar: "Any var"
