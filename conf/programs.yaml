@@ -15,3 +15,17 @@
     help: "Uses a single variable"
     vars:
         singlevar: "Any var"
+
+-   name: "slurmsub"
+    exec: srun -p %partition% -A %account% -N %procs% -n %taskPerProc% --time %time% --job-name %jobname% --output %output% --error %error% %command%
+    help: "Run a slurm job"
+    vars:
+        partition: "Partition name. eg: clincloud"
+        account: "Account name. eg: GOTTGENS-CCLD-SL2-CPU"
+        procs: "Total processors"
+        taskPerProc: "Total tasks per processor"
+        time: "Max time for the job"
+        jobname: "Name of the job"
+        output: "job output file"
+        error: "job error file"
+        command: 'The command to be executed: "samtools view -H align.bam"'
