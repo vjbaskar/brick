@@ -12,6 +12,10 @@ import argparse
 CONFIG_FILE = "conf/programs.yaml"
 COMMANDS_DIR = "_commands"
 
+local_history = ".brick/"
+if not os.path.exists(local_history):
+        os.makedirs(local_history)
+
 # cli inputs
 #COMMAND_NAME = "hw"
 
@@ -41,9 +45,11 @@ def helpPlease(commands):
     """
     commands_help = []
     parser = argparse.ArgumentParser(description="brick")
+    parser.add_argument("--mode", help="Four modes: shell, print, slurm",
+                        action="store", required=True)
     subparsers = parser.add_subparsers(title='Available commands',
-                                       description='valid subcommands',
-                                       help='additional help', dest='commandName')
+                                       description='You can provide any command next to brick',
+                                       help='-----List of commands------', dest='commandName')
     for single_command in commands:
         temp = subparsers.add_parser(name=single_command.name, help=single_command.helptext)
         for i in single_command.single_entry():
@@ -100,6 +106,7 @@ class Command:
         self.exec = each_command["exec"]
         self.helptext = each_command["help"]
         self.vars = each_command["vars"]
+        self.command_list = []
 
     def user_help(self, var):
         return (self.vars[var])
@@ -107,33 +114,6 @@ class Command:
     def gettime(none):  # Get time in a file creation friendly way
         t = datetime.datetime.now().strftime("%Y-%m-%d-%H_%M_%s")
         return (t)
-
-    def create_command_file(self):
-        """
-        Creates a sh file for each command
-        """
-        if not os.path.exists(COMMANDS_DIR):
-            os.mkdir(COMMANDS_DIR)
-        t = self.gettime()
-        exec_file = COMMANDS_DIR + "/" + self.name + "." + t + ".sh"
-        with open(exec_file, "w") as f:
-            f.write('#!/usr/bin/env bash' + "\n")
-            f.write('set -euo pipefail' + "\n")
-            f.write(self.exec + "\n")
-        os.chmod(exec_file, 0o755)
-        self.exec_file = exec_file
-        return (exec_file)
-
-    def shell(self):
-        """
-        Runs the sh file created by create_command_file function
-        """
-        outpt = []
-        for cmd in self.command_list:
-            cmd = ["bash", "-o", "pipefail", "-c"] + [cmd]
-            t = subprocess.check_call(cmd)
-            outpt.append(t)
-        return (outpt)
 
     def single_entry(self):
         e = self.exec
@@ -160,6 +140,23 @@ class Command:
         multi = self.multi_entry()
         return (multi)
 
+
+    def create_command_file(self):
+        """
+        Creates a sh file for each command
+        """
+        if not os.path.exists(COMMANDS_DIR):
+            os.mkdir(COMMANDS_DIR)
+        t = self.gettime()
+        exec_file = COMMANDS_DIR + "/" + self.name + "." + t + ".sh"
+        with open(exec_file, "w") as f:
+            f.write('#!/usr/bin/env bash' + "\n")
+            f.write('set -euo pipefail' + "\n")
+            f.write(self.exec + "\n")
+        os.chmod(exec_file, 0o755)
+        self.exec_file = exec_file
+        return (exec_file)
+
     def create_command(self, cl_args):
         command_list = []
         command_to_single = self.exec
@@ -168,67 +165,108 @@ class Command:
 
         for i in single_entries:
             word_to_replace = "%" + i + "%"
-            print(f"{i} == {word_to_replace} == {cl_args[i]}")
+            #print(f"{i} == {word_to_replace} == {cl_args[i]}")
             command_to_single = command_to_single.replace(word_to_replace, cl_args[i])
         command_from_single = command_to_single
-
         for i in multi_entries:
             word_to_replace = "{" + i + "}"
             with open(cl_args[i], "r") as f:
                 for line in f:
                     command_to_exec = command_from_single
+                    #print(command_to_exec)
                     line = line.strip()
-                    print(line)
+                    #print(line)
                     command_to_exec = command_to_exec.replace(word_to_replace, line)
-                    print(command_to_exec)
                     command_list.append(command_to_exec)
                     self.command_list = command_list
-        print(command_list)
+        # If there are no multi entries then make single command as a list
+        if len(multi_entries) == 0:
+            #print("*****@*@*@*")
+            #print(command_from_single)
+            self.command_list = [command_from_single]
+            command_list = [command_from_single]
+        return(command_list)
 
+    # Command modes
+    def shell(self):
+        """
+        Runs the sh file created by create_command_file function
+        """
+        f = open(local_history + "/cmds", mode = "+a")
+        outpt = []
+        #cli_parse = self.create_command(cl_args)
+        #print(cli_parse)
+        for cmd in self.command_list:
+            cmd = ["bash", "-o", "pipefail", "-c"] + [cmd]
+            time_of_cmd = self.gettime()
+            t = subprocess.run(cmd, stderr = True)
+            print(f"{time_of_cmd}:\t{cmd}\t{t}", file = f)
+            outpt.append(t)
+        f.close()
+        return (outpt)
+
+    def print_command(self):
+        print("Hello")
+        print("Here we print command")
+
+    def slurm_command(self):
+        print("Here we run command using slurm")
+
+    def runner(mode):
+        print(f"***{mode}")
+        mode_run = {
+            "print": self.print_command,
+            "shell": self.shell,
+            "slurm": self.slurm_command
+        }
+        return mode_run.get(mode, "get help!")
+
+
+# Read config file and add in all commands into Command object list
 commands = read_config_yaml(CONFIG_FILE)
-#single_command = commands[0]
-#single_command.create_command(cl_args)
-
-
-
+# Create cli help
 parser = helpPlease(commands)
+# Get args list
 args = parser.parse_args()
 #args = parser.parse_args("hw --name Vijay --num test/numbers.txt".split())
+# Convert arg list as dictionary
+cl_args = vars(args)
+#print(cl_args)
 
-cl_args = vars(args)  # Converting Namespace to dict
-print(cl_args)
-if len(cl_args) == 1:
+if cl_args['commandName'] == None:
     parser.print_help()
     exit(0)
 
 COMMAND_NAME = args.commandName
 command_data = get_command(commands, COMMAND_NAME)
-# command_data.shell()
-#print(command_data.name)
-# print(args)
-
-#print(cl_args['commandName'])
+# Delete the command name from the args list.
 del cl_args['commandName']
-print(cl_args)
+# Send the args so that we can create a shell executable command list
 cli_parse = command_data.create_command(cl_args)
-command_data.shell()
+#command_data.shell(cl_args)
+
+print("hello")
+def runner(mode, command_data):
+    print(f"***{mode}")
+    mode_run = {
+        "print": command_data.print_command,
+        "shell": command_data.shell,
+        "slurm": command_data.slurm_command
+    }
+    return mode_run.get(mode, "get help!")
+
+#print(cl_args["mode"])
+#runner(cl_args["mode"], command_data)()
+
+
+
+
+#print(cl_args['mode'])
+# temp = mode_run[cl_args["mode"]]
+# temp
+#if cl_args['slurm'] == True:
+#    print("We have to run this in slurm")
 
 # exit(0)
 
 
-# command_data.create_command_file()
-# command_data.shell()
-
-
-"""
-def print_help(command_data, parser):
-    parser.add_argument("--name", help="name of a person")
-    parser.add_argument("--file", help = "file")
-    return(parser)
-"""
-
-"""
-Get the data from argparse
-for arg in vars(args):
-     print arg, getattr(args, arg)
-"""
