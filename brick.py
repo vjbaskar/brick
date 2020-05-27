@@ -56,7 +56,7 @@ def helpPlease(commands):
             temp.add_argument("--" + i, help="(Var) " + single_command.user_help(i), action="store", required=True)
         commands_help.append(temp)
         for i in single_command.multi_entry():
-            temp.add_argument("--" + i, help="(File) " + single_command.user_help(i), action="store", required=True)
+            temp.add_argument("--" + i, help="(File) " + single_command.user_help(i), action="store", required=True, type = check_file)
         commands_help.append(temp)
     return (parser)
 
@@ -255,18 +255,6 @@ def runner(mode, command_data):
     }
     return mode_run.get(mode, "get help!")
 
-#print(cl_args["mode"])
-#runner(cl_args["mode"], command_data)()
-
-
-
-
-#print(cl_args['mode'])
-# temp = mode_run[cl_args["mode"]]
-# temp
-#if cl_args['slurm'] == True:
-#    print("We have to run this in slurm")
-
-# exit(0)
-
+print(cl_args["mode"])
+runner(cl_args["mode"], command_data)()
 
